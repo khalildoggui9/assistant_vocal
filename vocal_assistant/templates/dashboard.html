@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant Vocal — Tunisie Telecom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        :root {
+            --tt-red:    #E2001A;
+            --tt-red2:   #b50015;
+            --tt-orange: #F47920;
+            --tt-yellow: #FDB913;
+            --tt-green:  #00A651;
+            --tt-blue:   #0072BC;
+            --tt-purple: #662D91;
+            --bg:        #0d0d12;
+            --surface:   #13131a;
+            --surface2:  #1c1c26;
+            --border:    #2a2a38;
+            --text:      #f0f0f8;
+            --muted:     #6b6b88;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* ── HEADER ────────────────────────────────── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo-zone {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tt-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Teardrop TT logo */
+        .tt-drop {
+            width: 36px;
+            height: 42px;
+            position: relative;
+        }
+
+        .tt-drop svg { width: 100%; height: 100%; }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        .logo-text span:first-child {
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            color: var(--tt-red);
+            text-transform: uppercase;
+        }
+        .logo-text span:last-child {
+            font-size: .65rem;
+            color: var(--muted);
+            letter-spacing: .04em;
+        }
+
+        .divider-v {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+        }
+
+        .product-name {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: .02em;
+        }
+        .product-name span { color: var(--tt-red); }
+
+        #ws-badge {
+            font-size: .7rem;
+            font-family: monospace;
+            padding: .25rem .75rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+        #ws-badge.connected { color: var(--tt-green); border-color: var(--tt-green); background: rgba(0,166,81,.08); }
+        #ws-badge.error     { color: var(--tt-red);   border-color: var(--tt-red);   background: rgba(226,0,26,.08); }
+
+        /* ── LAYOUT ────────────────────────────────── */
+        main {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            gap: 1px;
+            background: var(--border);
+            height: calc(100vh - 64px);
+        }
+
+        .panel { background: var(--surface); overflow-y: auto; }
+
+        .panel-title {
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 1.25rem 1.5rem .75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── LEFT PANEL ─────────────────────────────── */
+        .orb-wrap {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .orb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto .75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            transition: all .4s;
+            position: relative;
+        }
+
+        .orb::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: all .4s;
+        }
+
+        .orb.idle::after    { border-color: var(--tt-red); opacity: .3; }
+        .orb.listening      { border-color: var(--tt-green); }
+        .orb.listening::after { border-color: var(--tt-green); opacity: .6; animation: ring 1.2s ease-in-out infinite; }
+        .orb.processing     { border-color: var(--tt-orange); }
+        .orb.processing::after { border-color: var(--tt-orange); opacity: .6; }
+        .orb.speaking       { border-color: var(--tt-blue); }
+        .orb.speaking::after { border-color: var(--tt-blue); opacity: .6; }
+
+        @keyframes ring {
+            0%, 100% { transform: scale(1);    opacity: .6; }
+            50%       { transform: scale(1.12); opacity: .2; }
+        }
+
+        .state-name {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--tt-red);
+            margin-bottom: .2rem;
+        }
+        .state-desc { font-size: .75rem; color: var(--muted); }
+
+        .info-rows { padding: .75rem 1.5rem; border-bottom: 1px solid var(--border); }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .55rem 0;
+            font-size: .8rem;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-key { color: var(--muted); font-size: .72rem; }
+        .info-val { font-weight: 600; }
+
+        .badge {
+            font-size: .65rem;
+            font-weight: 700;
+            padding: .2rem .55rem;
+            border-radius: 12px;
+        }
+        .badge-on  { background: rgba(0,166,81,.15);  color: var(--tt-green); border: 1px solid var(--tt-green); }
+        .badge-off { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+        .guide-box {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .guide-step {
+            display: flex;
+            gap: .75rem;
+            align-items: flex-start;
+            margin-bottom: .75rem;
+            font-size: .78rem;
+        }
+        .guide-step:last-child { margin-bottom: 0; }
+        .step-num {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: var(--tt-red);
+            color: #fff;
+            font-size: .6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .step-text { color: var(--muted); line-height: 1.5; }
+        .step-text strong { color: var(--text); }
+
+        .btn-refresh {
+            display: block;
+            width: calc(100% - 3rem);
+            margin: 1rem 1.5rem;
+            padding: .6rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: .78rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+        .btn-refresh:hover { border-color: var(--tt-red); color: var(--tt-red); }
+
+        /* ── CENTER PANEL ────────────────────────────── */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+        }
+
+        .chat-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: .75rem;
+        }
+
+        /* Bubbles */
+        .bubble {
+            max-width: 80%;
+            padding: .75rem 1rem;
+            border-radius: 12px;
+            font-size: .85rem;
+            line-height: 1.6;
+            animation: pop .18s ease;
+        }
+        @keyframes pop { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+        .bub-user {
+            align-self: flex-end;
+            background: rgba(226,0,26,.1);
+            border: 1px solid rgba(226,0,26,.25);
+            border-radius: 12px 12px 2px 12px;
+        }
+        .bub-user .bub-label { font-size: .6rem; color: rgba(226,0,26,.7); margin-bottom: .2rem; text-align: right; }
+
+        .bub-aria {
+            align-self: flex-start;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--tt-red);
+            border-radius: 0 12px 12px 12px;
+        }
+        .bub-aria .bub-label { font-size: .6rem; color: var(--tt-red); margin-bottom: .2rem; }
+
+        .bub-think {
+            align-self: flex-start;
+            background: rgba(244,121,32,.06);
+            border: 1px dashed rgba(244,121,32,.3);
+            border-radius: 8px;
+            color: var(--tt-orange);
+            font-size: .8rem;
+            font-style: italic;
+        }
+
+        .bub-partial {
+            align-self: flex-end;
+            background: var(--surface2);
+            border: 1px dashed var(--border);
+            border-radius: 12px 12px 2px 12px;
+            color: var(--muted);
+            font-size: .8rem;
+            font-style: italic;
+        }
+
+        .bub-sys {
+            align-self: center;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--muted);
+            font-size: .72rem;
+            padding: .3rem .85rem;
+        }
+
+        /* ── INPUT BAR ──────────────────────────────── */
+        .input-bar {
+            padding: .85rem 1.25rem;
+            background: var(--surface2);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: .65rem;
+            align-items: center;
+        }
+
+        .mic-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1.5px solid var(--tt-red);
+            color: var(--tt-red);
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .2s;
+        }
+        .mic-btn.active { background: var(--tt-green); border-color: var(--tt-green); color: #fff; animation: ring 1s infinite; }
+
+        #cmd-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: .6rem 1rem;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: .82rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        #cmd-input:focus { border-color: var(--tt-red); }
+        #cmd-input::placeholder { color: var(--muted); }
+
+        .send-btn {
+            padding: .6rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            background: var(--tt-red);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+        .send-btn:hover { background: var(--tt-red2); transform: translateY(-1px); }
+
+        /* ── HINTS ──────────────────────────────────── */
+        .hints {
+            padding: .5rem 1.25rem;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .hint-label { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+        .hint-chip {
+            font-size: .7rem;
+            color: var(--muted);
+            cursor: pointer;
+            padding: .2rem .5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            transition: all .15s;
+        }
+        .hint-chip:hover { border-color: var(--tt-red); color: var(--tt-red); }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-zone">
+        <div class="tt-logo">
+            <div class="tt-drop">
+                <svg viewBox="0 0 100 115" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <clipPath id="drop">
+                            <path d="M50 115 C20 90 0 68 0 45 A50 50 0 0 1 100 45 C100 68 80 90 50 115Z"/>
+                        </clipPath>
+                    </defs>
+                    <path d="M50 115 C20 90 0 68 0 45 A50 50 0 0 1 100 45 C100 68 80 90 50 115Z" fill="#E2001A"/>
+                    <rect x="0"  y="0"  width="50"  height="57" fill="#E2001A" clip-path="url(#drop)"/>
+                    <rect x="50" y="0"  width="50"  height="57" fill="#E2001A" clip-path="url(#drop)"/>
+                    <rect x="0"  y="0"  width="25"  height="57" fill="#F47920" clip-path="url(#drop)"/>
+                    <rect x="75" y="0"  width="25"  height="57" fill="#00A651" clip-path="url(#drop)"/>
+                    <rect x="25" y="0"  width="25"  height="57" fill="#FDB913" clip-path="url(#drop)"/>
+                    <rect x="50" y="0"  width="25"  height="57" fill="#0072BC" clip-path="url(#drop)"/>
+                    <text x="50" y="64" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="38" fill="white">TT</text>
+                </svg>
+            </div>
+            <div class="logo-text">
+                <span>Tunisie Telecom</span>
+                <span>Réseau de confiance</span>
+            </div>
+        </div>
+        <div class="divider-v"></div>
+        <div class="product-name">Assistant <span>Vocal</span> IA</div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center">
+        <span style="font-size:.7rem;color:var(--muted)" id="ai-hdr">IA: chargement...</span>
+        <div id="ws-badge">● Connexion...</div>
+    </div>
+</header>
+
+<main>
+    <!-- LEFT -->
+    <div class="panel">
+        <div class="panel-title">État du système</div>
+
+        <div class="orb-wrap">
+            <div class="orb idle" id="orb">🎙️</div>
+            <div class="state-name" id="state-name">IDLE</div>
+            <div class="state-desc" id="state-desc">En attente du mot-clé</div>
+        </div>
+
+        <div class="info-rows">
+            <div class="info-row">
+                <span class="info-key">Assistant</span>
+                <span class="info-val" id="s-name">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Mot-clé</span>
+                <span class="info-val" id="s-wake">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">IA Groq</span>
+                <span class="info-val"><span class="badge badge-off" id="ai-badge">OFF</span></span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Microphone</span>
+                <span class="info-val" id="s-mic" style="color:var(--muted)">—</span>
+            </div>
+        </div>
+
+        <div class="guide-box">
+            <div class="panel-title" style="padding:0 0 .75rem;">Guide d'utilisation</div>
+            <div class="guide-step">
+                <div class="step-num">1</div>
+                <div class="step-text">Dites <strong>"Aria"</strong> pour activer l'assistant</div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">2</div>
+                <div class="step-text">Posez votre question à voix haute</div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">3</div>
+                <div class="step-text">Écoutez la réponse vocale d'Aria</div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">4</div>
+                <div class="step-text">Ou tapez directement dans la barre ci-dessous</div>
+            </div>
+        </div>
+
+        <button class="btn-refresh" onclick="sendWs('get_status')">↻ Actualiser</button>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center-panel">
+        <div class="panel-title">Conversation en temps réel</div>
+        <div class="chat-wrap" id="chat">
+            <div class="bubble bub-sys">Bienvenue sur l'assistant vocal Tunisie Telecom. Dites "Aria" pour commencer.</div>
+        </div>
+
+        <div class="input-bar">
+            <button class="mic-btn" id="mic-btn" title="Microphone">🎤</button>
+            <input id="cmd-input" type="text" placeholder='Tapez votre message ou dites "Aria"...' />
+            <button class="send-btn" onclick="sendCommand()">Envoyer</button>
+        </div>
+
+        <div class="hints">
+            <span class="hint-label">Exemples :</span>
+            <span class="hint-chip" onclick="setInput('aria quelle heure est-il')">Quelle heure est-il</span>
+            <span class="hint-chip" onclick="setInput('aria explique le machine learning')">Machine learning</span>
+            <span class="hint-chip" onclick="setInput('aria raconte une blague')">Blague</span>
+            <span class="hint-chip" onclick="setInput('aria météo Tunis')">Météo Tunis</span>
+            <span class="hint-chip" onclick="setInput('aria quel est le débit moyen de la fibre optique')">Fibre optique</span>
+        </div>
+    </div>
+</main>
+
+<script>
+let ws = null;
+let partialEl = null;
+let thinkEl = null;
+
+function connect() {
+    ws = new WebSocket(`ws://${location.host}/ws/assistant/`);
+    ws.onopen    = () => { badge('connected','● Connecté'); sendWs('get_status'); sys('Connecté au serveur.'); };
+    ws.onclose   = () => { badge('error','● Déconnecté'); setTimeout(connect, 3000); };
+    ws.onerror   = () => badge('error','● Erreur');
+    ws.onmessage = e  => route(JSON.parse(e.data));
+}
+
+function sendWs(action, extra={}) {
+    if (ws && ws.readyState === WebSocket.OPEN)
+        ws.send(JSON.stringify({action, ...extra}));
+}
+
+function badge(cls, txt) {
+    const b = document.getElementById('ws-badge');
+    b.className = cls; b.textContent = txt;
+}
+
+function route(msg) {
+    const type = msg.type;
+    const d    = msg.data || {};
+    switch(type) {
+        case 'status':                updateStatus(d); break;
+        case 'state_change':          updateState(d.current); break;
+        case 'transcription_partial': showPartial(d.text); break;
+        case 'transcription_final':
+            clearPartial();
+            var t = d.heard || d.text;
+            if (t && t !== '(silence détecté)') addUser(t);
+            break;
+        case 'ai_thinking':   showThink(d.cleaned || d.heard || '...'); break;
+        case 'ai_response':   clearThink(); addAria(d.answer); break;
+    }
+}
+
+function updateStatus(d) {
+    if (!d) return;
+    document.getElementById('s-name').textContent = d.name || '—';
+    document.getElementById('s-wake').textContent = d.wake_word || '—';
+    const on = d.ai_available;
+    const b  = document.getElementById('ai-badge');
+    b.textContent = on ? 'Actif ✓' : 'Inactif';
+    b.className   = 'badge ' + (on ? 'badge-on' : 'badge-off');
+    document.getElementById('ai-hdr').textContent = 'IA Groq: ' + (on ? '✓ Active' : '✗ Clé manquante');
+    document.getElementById('s-mic').textContent = d.is_listening ? '🟢 Actif' : '⚪ Veille';
+    updateState(d.state);
+}
+
+const STATE_MAP = {
+    'IDLE':       ['🎙️','idle',       'En attente du mot-clé "Aria"'],
+    'LISTENING':  ['👂','listening',  "J'écoute votre question..."],
+    'PROCESSING': ['⚙️','processing', "L'IA analyse votre demande..."],
+    'SPEAKING':   ['🔊','speaking',   "Aria parle..."],
+    'ERROR':      ['⚠️','',           'Erreur système'],
+    'SHUTDOWN':   ['💤','',           'Système arrêté'],
+};
+
+function updateState(state) {
+    const [emoji, cls, desc] = STATE_MAP[state] || ['🎙️','idle',''];
+    const orb = document.getElementById('orb');
+    orb.textContent = emoji;
+    orb.className   = 'orb ' + cls;
+    document.getElementById('state-name').textContent = state || 'IDLE';
+    document.getElementById('state-desc').textContent = desc;
+    const mic = document.getElementById('mic-btn');
+    mic.className   = 'mic-btn' + (state === 'LISTENING' ? ' active' : '');
+}
+
+function addUser(text) {
+    const t = new Date().toLocaleTimeString('fr-FR');
+    add(`<div class="bubble bub-user">
+        <div class="bub-label">🎤 Entendu — ${t}</div>
+        <div>${esc(text)}</div>
+    </div>`);
+}
+
+function addAria(text) {
+    const t = new Date().toLocaleTimeString('fr-FR');
+    add(`<div class="bubble bub-aria">
+        <div class="bub-label">🤖 Aria — ${t}</div>
+        <div>${esc(text)}</div>
+    </div>`);
+}
+
+function showPartial(text) {
+    if (!partialEl) {
+        partialEl = addReturn(`<div class="bubble bub-partial">🎤 ${esc(text)}</div>`);
+    } else {
+        partialEl.innerHTML = '🎤 ' + esc(text);
+    }
+}
+function clearPartial() { if (partialEl) { partialEl.remove(); partialEl = null; } }
+
+function showThink(q) {
+    clearThink();
+    thinkEl = addReturn(`<div class="bubble bub-think">⚙️ Analyse en cours : "${esc(q)}"...</div>`);
+}
+function clearThink() { if (thinkEl) { thinkEl.remove(); thinkEl = null; } }
+
+function sys(text) {
+    add(`<div class="bubble bub-sys">${esc(text)}</div>`);
+}
+
+function add(html) {
+    const c = document.getElementById('chat');
+    c.insertAdjacentHTML('beforeend', html);
+    c.scrollTop = c.scrollHeight;
+    while (c.children.length > 100) c.removeChild(c.firstChild);
+}
+function addReturn(html) {
+    const c = document.getElementById('chat');
+    c.insertAdjacentHTML('beforeend', html);
+    c.scrollTop = c.scrollHeight;
+    return c.lastElementChild;
+}
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function sendCommand() {
+    const inp  = document.getElementById('cmd-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    sendWs('manual_command', {text});
+    inp.value = '';
+}
+
+function setInput(text) {
+    document.getElementById('cmd-input').value = text;
+    document.getElementById('cmd-input').focus();
+}
+
+document.getElementById('cmd-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendCommand();
+});
+
+document.getElementById('mic-btn').addEventListener('click', () => {
+    sys('Le microphone est actif en permanence. Dites "Aria" pour activer.');
+});
+
+connect();
+</script>
+</body>
+</html>
